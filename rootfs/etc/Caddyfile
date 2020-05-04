@@ -1,0 +1,59 @@
+:80 {
+    root /var/www
+
+    log stdout
+
+    errors stderr
+
+    gzip
+
+    realip {
+        from cloudflare
+        # for swarm network
+        from 10.0.0.0/8
+    }
+
+    expires {
+        # modules or plugins static files
+        match .*/(assets|resources)/.* 1y
+        # public files
+        match /storage/app/uploads/public/.* 1y
+        # media files
+        match /storage/app/media/.* 1y
+    }
+
+    on startup php-fpm
+
+    fastcgi / 127.0.0.1:9000 php {
+        connect_timeout 120s
+        read_timeout    120s
+        send_timeout    120s
+    }
+
+    rewrite {
+        to {path} /index.php?{query}
+    }
+
+    rewrite /storage {
+        if {path} starts_with /storage/app/uploads/public
+        if {path} starts_with /storage/app/media
+        if {path} starts_with /storage/temp/public
+        if_op or
+        to {path}
+    }
+
+    rewrite /modules {
+        if {path} match .*/(assets|resources)/.*
+        to {path}
+    }
+
+    rewrite /plugins {
+        if {path} match .*/(assets|resources)/.*
+        to {path}
+    }
+
+    rewrite /themes {
+        if {path} match .*/(assets|resources)/.*
+        to {path}
+    }
+}
