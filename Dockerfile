@@ -1,10 +1,13 @@
 #
 # caddy builder
 #
-FROM registry.us-west-1.aliyuncs.com/fengsi/docker-caddy-builder:1.0.0 as caddy-builder
+FROM fengsiio/caddy-builder:v1 as caddy-builder
 
-ARG CADDY_VERSION
-ARG CADDY_PLUGINS
+ARG CADDY_VERSION="1.0.5"
+ARG CADDY_PLUGINS="\
+    github.com/epicagency/caddy-expires \
+    github.com/captncraig/caddy-realip \
+    "
 
 RUN /bin/sh /usr/bin/builder.sh
 
@@ -15,17 +18,13 @@ RUN /bin/sh /usr/bin/builder.sh
 FROM composer as october-builder
 
 WORKDIR /build
-ARG OCTOBER_VERSION="master"
+
+RUN composer global require hirak/prestissimo;
+
+ARG OCTOBER_VERSION="v1.0.465"
 
 RUN set -ex; \
-    composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/; \
-    # for github proxy support
-    composer config -g github-protocols https ssh; \
-    # for parallel install
-    composer global require hirak/prestissimo;
-
-RUN set -ex; \
-    git clone --quiet -b "v${OCTOBER_VERSION}" --depth 1 https://github.com/octobercms/october.git .; \
+    git clone --quiet -b "${OCTOBER_VERSION}" --depth 1 https://github.com/octobercms/october.git .; \
     # fix compose install hanging
     composer require \
             --no-update \
@@ -71,7 +70,6 @@ LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
 
 RUN set -ex; \
-    sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; \
     # install wait-for command
     (cd /usr/local/bin && curl -O https://raw.githubusercontent.com/eficode/wait-for/master/wait-for); \
     rm -rf *; \
@@ -94,11 +92,6 @@ RUN set -ex; \
         --with-freetype \
         --with-jpeg \
         --with-webp \
-        # php 7.3
-        # --with-png-dir=/usr/include/ \
-        # --with-webp-dir=/usr/include/ \
-        # --with-jpeg-dir=/usr/include/ \
-        # --with-freetype-dir=/usr/include/ \
     ; \
     docker-php-ext-install -j "$(nproc)" \
         pdo_mysql \
