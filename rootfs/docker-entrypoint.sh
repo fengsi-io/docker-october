@@ -63,7 +63,7 @@ if [ -d "$patchs_dir" ]; then
 
     patchfile="/tmp/fengsi.patch"
     diff -ur /var/www $patchs_dir > $patchfile || true
-    patch -p3 < $patchfile
+    patch -p3 < $patchfile || true
     rm -rf $patchs_dir $patchfile || true
 fi
 

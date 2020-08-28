@@ -21,7 +21,7 @@ WORKDIR /build
 
 RUN composer global require hirak/prestissimo;
 
-ARG OCTOBER_VERSION="v1.0.465"
+ARG OCTOBER_VERSION="v1.0.468"
 
 RUN set -ex; \
     git clone --quiet -b "${OCTOBER_VERSION}" --depth 1 https://github.com/octobercms/october.git .; \
@@ -120,13 +120,18 @@ COPY --from=caddy-builder /go/bin/caddy /usr/bin/caddy
 # install octobercms
 COPY --chown=www-data:www-data --from=october-builder /build /var/www
 
-RUN set -ex; \
-    apk add --no-cache acl; \
-    setfacl -Rdm g:www-data:rwx /var/www
-
+# install configs and scripts
 COPY --chown=www-data:www-data ./rootfs/ /
+
+# for docker-entrypoint.sh support
+RUN set -ex; \
+    apk add --no-cache acl patch fcgi; \
+    setfacl -Rdm g:www-data:rwx /var/www; \
+    chmod +x /*.sh;
 
 EXPOSE 80
 
-ENTRYPOINT [ "/bin/sh", "/usr/local/bin/docker-entrypoint.sh" ]
+HEALTHCHECK --interval=60s --timeout=10s CMD [ "/php-fpm-healthcheck.sh" ]
+
+ENTRYPOINT [ "/bin/sh", "/docker-entrypoint.sh" ]
 CMD [ "/bin/parent", "caddy", "-conf", "/etc/Caddyfile", "-log", "stdout", "-agree" ]
