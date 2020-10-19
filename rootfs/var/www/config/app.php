@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'debug' => env('APP_DEBUG', false),
+    'debug' => filter_var(env('APP_DEBUG', "false"), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------

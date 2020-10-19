@@ -131,7 +131,7 @@ RUN set -ex; \
 
 EXPOSE 80
 
-HEALTHCHECK --interval=60s --timeout=10s CMD [ "/php-fpm-healthcheck.sh" ]
+HEALTHCHECK --interval=10s --timeout=10s --retries=3 CMD [ "/php-fpm-healthcheck.sh" ]
 
 ENTRYPOINT [ "/bin/sh", "/docker-entrypoint.sh" ]
 CMD [ "/bin/parent", "caddy", "-conf", "/etc/Caddyfile", "-log", "stdout", "-agree" ]
