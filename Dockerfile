@@ -9,39 +9,37 @@ ARG CADDY_PLUGINS="\
     github.com/captncraig/caddy-realip \
     "
 
-RUN /bin/sh /usr/bin/builder.sh
+RUN if [ ! -z ${http_proxy+x} ]; then \
+        go env -w GO111MODULE=on && go env -w GOPROXY=https://goproxy.io,direct; \
+    fi && \
+    /bin/sh /usr/bin/builder.sh
 
 
 #
 # October CMS Builder
 #
-FROM composer as october-builder
+FROM composer:2 as october-builder
 
 WORKDIR /build
 
-RUN composer global require hirak/prestissimo;
-
-ARG OCTOBER_VERSION="v1.0.468"
+ARG OCTOBER_VERSION="v1.1.1"
 
 RUN set -ex; \
+    # force to use v1
+    composer self-update --1; \
+    if [ ! -z ${http_proxy+x} ]; then \
+        export HTTP_PROXY_REQUEST_FULLURI=0; \
+        export HTTPS_PROXY_REQUEST_FULLURI=0; \
+        composer config -g repo.packagist composer https://packagist.phpcomposer.com; \
+    fi; \
+    composer global require hirak/prestissimo; \
+    # get sources
     git clone --quiet -b "${OCTOBER_VERSION}" --depth 1 https://github.com/octobercms/october.git .; \
-    # fix compose install hanging
-    composer require \
-            --no-update \
-            --ignore-platform-reqs\
-            --optimize-autoloader \
-            --classmap-authoritative \
-            --apcu-autoloader \
-            laravel/framework:5.5.*; \
+    # patch https://github.com/octobercms/october/issues/5033
+    git config --global url."https://github.com/".insteadOf git@github.com:; \
+    git config --global url."https://".insteadOf "git://"; \
     # install package
-    composer install \
-        --no-dev \
-        --no-interaction \
-        --ignore-platform-reqs \
-        --optimize-autoloader \
-        --classmap-authoritative \
-        --apcu-autoloader \
-    ; \
+    composer install -a --no-dev --no-progress --ignore-platform-reqs; \
     # remove some useless files
     (\
         find . -type d -name ".git" && \
@@ -70,6 +68,9 @@ LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
 
 RUN set -ex; \
+    if [ ! -z ${http_proxy+x} ]; then \
+        sed -i 's@dl-cdn.alpinelinux.org@mirrors.aliyun.com@g' /etc/apk/repositories; \
+    fi; \
     # install wait-for command
     (cd /usr/local/bin && curl -O https://raw.githubusercontent.com/eficode/wait-for/master/wait-for); \
     rm -rf *; \

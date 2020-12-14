@@ -15,7 +15,7 @@
 
     expires {
         # modules or plugins static files
-        match .*/(assets|resources)/.* 1y
+        match .*/(assets|resources|resized)/.* 1y
         # public files
         match /storage/app/uploads/public/.* 1y
         # media files
