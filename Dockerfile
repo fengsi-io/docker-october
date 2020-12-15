@@ -42,12 +42,12 @@ RUN set -ex; \
     composer create-project \
         --quiet \
         --no-dev \
+        --no-scripts \
         --ignore-platform-reqs \
-        october/october october "${OCTOBER_VERSION#v}"; \
+        october/october . "${OCTOBER_VERSION#v}"; \
     # use .env mode and backup origin config files
-    php artisan october:env; \
-    mv .env .env.origin; \
-    mv config config.origin; \
+    php artisan package:discover && php artisan october:env; \
+    mv .env .env.origin && mv config config.origin; \
     # remove some useless files
     (\
         find . -type d -name ".git" && \
@@ -124,7 +124,7 @@ RUN set -ex; \
 COPY --from=caddy-builder /go/bin/parent /bin/parent
 COPY --from=caddy-builder /go/bin/caddy /usr/bin/caddy
 COPY --from=october-builder /usr/bin/composer /usr/bin/composer
-COPY --from=october-builder --chown=www-data:www-data /build/october/ ./
+COPY --from=october-builder --chown=www-data:www-data /build/ ./
 COPY ./rootfs/ /
 
 EXPOSE 80
