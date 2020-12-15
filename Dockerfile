@@ -9,7 +9,7 @@ ARG CADDY_PLUGINS="\
     github.com/captncraig/caddy-realip \
     "
 
-RUN if [ ! -z ${http_proxy+x} ]; then \
+RUN if [ -n ${http_proxy+x} ]; then \
         go env -w GO111MODULE=on && go env -w GOPROXY=https://goproxy.io,direct; \
     fi && \
     /bin/sh /usr/bin/builder.sh
@@ -26,11 +26,13 @@ ARG OCTOBER_VERSION="v1.1.1"
 
 RUN set -ex; \
     # force to use v1
-    composer self-update --1; \
-    if [ ! -z ${http_proxy+x} ]; then \
+    composer --quiet self-update --1; \
+    if [ -n ${http_proxy+x} ]; then \
         export HTTP_PROXY_REQUEST_FULLURI=0; \
         export HTTPS_PROXY_REQUEST_FULLURI=0; \
         composer config -g repo.packagist composer https://packagist.phpcomposer.com; \
+        git config --global http.proxy ${http_proxy}; \
+        git config --global https.proxy ${http_proxy}; \
     fi; \
     # for v1 speed boost
     composer global require hirak/prestissimo; \
@@ -41,7 +43,7 @@ RUN set -ex; \
         --quiet \
         --no-dev \
         --ignore-platform-reqs \
-        october/october=${OCTOBER_VERSION#v} october; \
+        october/october october "${OCTOBER_VERSION#v}"; \
     # use .env mode and backup origin config files
     php artisan october:env; \
     mv .env .env.origin; \
@@ -69,7 +71,7 @@ LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
 
 RUN set -ex; \
-    if [ ! -z ${http_proxy+x} ]; then \
+    if [ -n ${http_proxy+x} ]; then \
         sed -i 's@dl-cdn.alpinelinux.org@mirrors.aliyun.com@g' /etc/apk/repositories; \
     fi; \
     # install wait-for command
