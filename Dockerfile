@@ -32,14 +32,20 @@ RUN set -ex; \
         export HTTPS_PROXY_REQUEST_FULLURI=0; \
         composer config -g repo.packagist composer https://packagist.phpcomposer.com; \
     fi; \
+    # for v1 speed boost
     composer global require hirak/prestissimo; \
-    # get sources
-    git clone --quiet -b "${OCTOBER_VERSION}" --depth 1 https://github.com/octobercms/october.git .; \
-    # patch https://github.com/octobercms/october/issues/5033
+    # install package
     git config --global url."https://github.com/".insteadOf git@github.com:; \
     git config --global url."https://".insteadOf "git://"; \
-    # install package
-    composer install -a --no-dev --no-progress --ignore-platform-reqs; \
+    composer create-project \
+        --quiet \
+        --no-dev \
+        --ignore-platform-reqs \
+        october/october=${OCTOBER_VERSION#v} october; \
+    # use .env mode and backup origin config files
+    php artisan october:env; \
+    mv .env .env.origin; \
+    mv config config.origin; \
     # remove some useless files
     (\
         find . -type d -name ".git" && \
@@ -52,12 +58,7 @@ RUN set -ex; \
         find . -name ".jshintrc" && \
         find . -name "phpcs.xml" && \
         find . -name "phpunit.xml" \
-    ) | xargs rm -rf; \
-    \
-    php artisan october:env; \
-    # remove origin config files
-    mv .env .env.origin; \
-    mv config config.origin;
+    ) | xargs rm -rf;
 
 
 #
@@ -111,28 +112,22 @@ RUN set -ex; \
     apk add --virtual .phpexts-rundeps $runDeps; \
     apk del .build-deps; \
     # Use the default production configuration
-    ln -s "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini";
-
+    ln -s "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
+    # for premission and entrypoint depends
+    apk add --no-cache acl patch fcgi fcgi; \
+    setfacl -Rdm g:www-data:rwx /var/www; \
+    chown -R www-data:www-data /var/www;
 
 # Install Caddy & Process Wrapper
 COPY --from=caddy-builder /go/bin/parent /bin/parent
 COPY --from=caddy-builder /go/bin/caddy /usr/bin/caddy
-
-# install octobercms
-COPY --chown=www-data:www-data --from=october-builder /build /var/www
-
-# install configs and scripts
-COPY --chown=www-data:www-data ./rootfs/ /
-
-# for docker-entrypoint.sh support
-RUN set -ex; \
-    apk add --no-cache acl patch fcgi; \
-    setfacl -Rdm g:www-data:rwx /var/www; \
-    chmod +x /*.sh;
+COPY --from=october-builder /usr/bin/composer /usr/bin/composer
+COPY --from=october-builder --chown=www-data:www-data /build/october/ ./
+COPY ./rootfs/ /
 
 EXPOSE 80
 
-HEALTHCHECK --interval=10s --timeout=10s --retries=3 CMD [ "/php-fpm-healthcheck.sh" ]
+HEALTHCHECK --interval=10s --timeout=10s --retries=3 CMD [ "php-fpm-healthcheck.sh" ]
 
-ENTRYPOINT [ "/bin/sh", "/docker-entrypoint.sh" ]
+ENTRYPOINT [ "docker-entrypoint.sh" ]
 CMD [ "/bin/parent", "caddy", "-conf", "/etc/Caddyfile", "-log", "stdout", "-agree" ]

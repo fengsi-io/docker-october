@@ -6,7 +6,7 @@ set -e
 #
 if $APP_DEBUG; then
     # wait for db started
-    /bin/sh /usr/local/bin/wait-for ${DB_HOST}:${DB_PORT} -t 60 -- \
+    /bin/sh /usr/local/bin/wait-for "${DB_HOST}":"${DB_PORT}" -t 60 -- \
         echo "database ready."
 fi
 
@@ -15,13 +15,13 @@ fi
 #
 first_initialize=false
 
-if [ ! -f .INITIALIZED ] && [ ! -z "${DB_HOST}" ] && [ ! -z "${DB_PORT}" ]; then
+if [ ! -f .INITIALIZED ] && [ -n "${DB_HOST}" ] && [ -n "${DB_PORT}" ]; then
 
     # database migration and new app key
     php artisan october:up
 
     # active theme and remove demo data
-    [ ! -z "$THEME" ] && php artisan theme:use ${THEME}
+    [ -n "$THEME" ] && php artisan theme:use "${THEME}"
     php artisan october:fresh
 
     # storage should always have full permission
@@ -37,12 +37,12 @@ fi
 #
 new_plugin_installed=false
 
-for plugin in $(echo $PLUGINS | tr "," " "); do
+for plugin in $(echo "$PLUGINS" | tr "," " "); do
 
-    plugin_path="/var/www/plugins/$(echo $plugin | tr '[:upper:]' '[:lower:]' | tr '.' '/')"
+    plugin_path="/var/www/plugins/$(echo "$plugin" | tr '[:upper:]' '[:lower:]' | tr '.' '/')"
 
     if [ ! -d "$plugin_path" ]; then
-        php artisan plugin:install ${plugin}
+        php artisan plugin:install "${plugin}"
         new_plugin_installed=true
     fi
 done
@@ -77,4 +77,4 @@ fi
 # and run migration
 php artisan october:up
 
-exec /usr/local/bin/docker-php-entrypoint $@
+exec /usr/local/bin/docker-php-entrypoint "$@"

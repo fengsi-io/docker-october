@@ -34,26 +34,36 @@
         to {path} /index.php?{query}
     }
 
+    rewrite / {
+        if {path} starts_with /favicon.ico
+        if {path} starts_with /sitemap.xml
+        if {path} starts_with /robots.txt
+        if {path} starts_with /humans.txt
+        if_op or
+        to {path}
+    }
+
     rewrite /storage {
         if {path} starts_with /storage/app/uploads/public
         if {path} starts_with /storage/app/media
+        if {path} starts_with /storage/app/resized
         if {path} starts_with /storage/temp/public
         if_op or
         to {path}
     }
 
     rewrite /modules {
-        if {path} match .*/(assets|resources)/.*
+        if {path} match /modules/.*/(assets|resources)/.*
         to {path}
     }
 
     rewrite /plugins {
-        if {path} match .*/(assets|resources)/.*
+        if {path} match /plugins/.*/(assets|resources)/.*
         to {path}
     }
 
     rewrite /themes {
-        if {path} match .*/(assets|resources)/.*
+        if {path} match /themes/.*/(assets|resources)/.*
         to {path}
     }
 }

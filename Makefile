@@ -13,7 +13,7 @@ build:
 		--build-arg https_proxy \
 		--build-arg no_proxy \
 		--build-arg OCTOBER_VERSION=$(OCTOBER_VERSION) \
-		-t $(REGISTRY)/$(IMAGE):develop .
+		-t $(REGISTRY)/$(IMAGE):$(OCTOBER_VERSION) .
 
 push:
-	@docker push $(REGISTRY)/$(IMAGE):develop
+	@docker push $(REGISTRY)/$(IMAGE):$(OCTOBER_VERSION)

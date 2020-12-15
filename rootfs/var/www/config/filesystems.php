@@ -11,11 +11,11 @@ return [
     | by the framework. A "local" driver, as well as a variety of cloud
     | based drivers are available for your choosing. Just store away!
     |
-    | Supported: "local", "s3", "rackspace"
+    | Supported: "local", "ftp", "sftp", "s3", "rackspace"
     |
     */
 
-    'default' => 'local',
+    'default' => env('FILESYSTEM_DEFAULT', 'local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -28,7 +28,7 @@ return [
     |
     */
 
-    'cloud' => 's3',
+    'cloud' => env('FILESYSTEM_CLOUD', 's3'),
 
     /*
     |--------------------------------------------------------------------------
@@ -46,14 +46,15 @@ return [
         'local' => [
             'driver' => 'local',
             'root'   => storage_path('app'),
+            'url'    => '/storage/app',
         ],
 
         's3' => [
             'driver' => 's3',
-            'key'    => 'your-key',
-            'secret' => 'your-secret',
-            'region' => 'your-region',
-            'bucket' => 'your-bucket',
+            'key'    => env('FILESYSTEM_S3_KEY', 'your-key'),
+            'secret' => env('FILESYSTEM_S3_SECRET', 'your-secret'),
+            'region' => env('FILESYSTEM_S3_REGION', 'your-region'),
+            'bucket' => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
         ],
 
         'rackspace' => [
