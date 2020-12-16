@@ -9,7 +9,7 @@ ARG CADDY_PLUGINS="\
     github.com/captncraig/caddy-realip \
     "
 
-RUN if [ -n ${http_proxy+x} ]; then \
+RUN if [ -n "${http_proxy}" ]; then \
         go env -w GO111MODULE=on && go env -w GOPROXY=https://goproxy.io,direct; \
     fi && \
     /bin/sh /usr/bin/builder.sh
@@ -27,7 +27,7 @@ ARG OCTOBER_VERSION="v1.1.1"
 RUN set -ex; \
     # force to use v1
     composer --quiet self-update --1; \
-    if [ -n ${http_proxy+x} ]; then \
+    if [ -n "${http_proxy}" ]; then \
         export HTTP_PROXY_REQUEST_FULLURI=0; \
         export HTTPS_PROXY_REQUEST_FULLURI=0; \
         composer config -g repo.packagist composer https://packagist.phpcomposer.com; \
@@ -46,7 +46,9 @@ RUN set -ex; \
         --ignore-platform-reqs \
         october/october . "${OCTOBER_VERSION#v}"; \
     # use .env mode and backup origin config files
-    php artisan package:discover && php artisan october:env; \
+    chmod +x artisan; \
+    ./artisan package:discover; \
+    ./artisan october:env; \
     mv .env .env.origin && mv config config.origin; \
     # remove some useless files
     (\
@@ -71,12 +73,9 @@ LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
 
 RUN set -ex; \
-    if [ -n ${http_proxy+x} ]; then \
+    if [ -n "${http_proxy}" ]; then \
         sed -i 's@dl-cdn.alpinelinux.org@mirrors.aliyun.com@g' /etc/apk/repositories; \
     fi; \
-    # install wait-for command
-    (cd /usr/local/bin && curl -O https://raw.githubusercontent.com/eficode/wait-for/master/wait-for); \
-    rm -rf *; \
     #
     # PHP
     #
@@ -116,20 +115,17 @@ RUN set -ex; \
     # Use the default production configuration
     ln -s "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
     # for premission and entrypoint depends
-    apk add --no-cache acl patch fcgi fcgi; \
-    setfacl -Rdm g:www-data:rwx /var/www; \
+    apk add --no-cache wait4ports patch fcgi; \
     chown -R www-data:www-data /var/www;
 
 # Install Caddy & Process Wrapper
 COPY --from=caddy-builder /go/bin/parent /bin/parent
 COPY --from=caddy-builder /go/bin/caddy /usr/bin/caddy
-COPY --from=october-builder /usr/bin/composer /usr/bin/composer
 COPY --from=october-builder --chown=www-data:www-data /build/ ./
 COPY ./rootfs/ /
-
+RUN chmod 755 /usr/local/bin/*.sh
+ENV PATH="/var/www:${PATH}"
 EXPOSE 80
-
 HEALTHCHECK --interval=10s --timeout=10s --retries=3 CMD [ "php-fpm-healthcheck.sh" ]
-
 ENTRYPOINT [ "docker-entrypoint.sh" ]
-CMD [ "/bin/parent", "caddy", "-conf", "/etc/Caddyfile", "-log", "stdout", "-agree" ]
+CMD [ "start" ]

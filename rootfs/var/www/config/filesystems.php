@@ -66,6 +66,14 @@ return [
             'region'    => 'IAD',
         ],
 
+        'digitalocean' => [
+            'driver' => 'do_spaces',
+            'key'    => env('FILESYSTEM_DO_KEY', 'your-key'),
+            'secret' => env('FILESYSTEM_DO_SECRET', 'your-secret'),
+            'region' => env('FILESYSTEM_DO_REGION', 'your-region'),
+            'space'  => env('FILESYSTEM_DO_SPACE', 'your-space'),
+        ],
+
     ],
 
 ];

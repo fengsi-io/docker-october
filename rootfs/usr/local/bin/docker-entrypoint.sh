@@ -1,13 +1,17 @@
 #!/bin/sh
 set -e
 
+if [ "$*" != "start" ]; then
+    docker-php-entrypoint "$@"
+    return
+fi
+
 #
 # when debug, we should wait for db ready.
 #
-if $APP_DEBUG; then
+if [ "${APP_DEBUG:=false}" = "true" ]; then
     # wait for db started
-    /bin/sh /usr/local/bin/wait-for "${DB_HOST}":"${DB_PORT}" -t 60 -- \
-        echo "database ready."
+    wait4ports -q -s 1 -t 60 database=tcp://"${DB_HOST}":"${DB_PORT}"
 fi
 
 #
@@ -62,8 +66,8 @@ if [ -d "$patchs_dir" ]; then
     echo "patchs founded"
 
     patchfile="/tmp/fengsi.patch"
-    diff -ur /var/www $patchs_dir > $patchfile || true
-    patch -p3 < $patchfile || true
+    diff -ur /var/www $patchs_dir >$patchfile || true
+    patch -p3 <$patchfile || true
     rm -rf $patchs_dir $patchfile || true
 fi
 
@@ -77,4 +81,4 @@ fi
 # and run migration
 php artisan october:up
 
-exec /usr/local/bin/docker-php-entrypoint "$@"
+exec docker-php-entrypoint parent caddy -conf /etc/Caddyfile -log stdout -agree
