@@ -50,11 +50,13 @@ return [
         ],
 
         's3' => [
-            'driver' => 's3',
-            'key'    => env('FILESYSTEM_S3_KEY', 'your-key'),
-            'secret' => env('FILESYSTEM_S3_SECRET', 'your-secret'),
-            'region' => env('FILESYSTEM_S3_REGION', 'your-region'),
-            'bucket' => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
+            'driver'     => 's3',
+            'key'        => env('FILESYSTEM_S3_KEY', 'your-key'),
+            'secret'     => env('FILESYSTEM_S3_SECRET', 'your-secret'),
+            'endpoint'   => env('FILESYSTEM_S3_ENDPOINT', 'your-endpoint'),
+            'region'     => env('FILESYSTEM_S3_REGION', 'your-region'),
+            'bucket'     => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
+            'visibility' => 'public',
         ],
 
         'rackspace' => [
@@ -65,15 +67,6 @@ return [
             'endpoint'  => 'https://identity.api.rackspacecloud.com/v2.0/',
             'region'    => 'IAD',
         ],
-
-        'digitalocean' => [
-            'driver' => 'do_spaces',
-            'key'    => env('FILESYSTEM_DO_KEY', 'your-key'),
-            'secret' => env('FILESYSTEM_DO_SECRET', 'your-secret'),
-            'region' => env('FILESYSTEM_DO_REGION', 'your-region'),
-            'space'  => env('FILESYSTEM_DO_SPACE', 'your-space'),
-        ],
-
     ],
 
 ];
