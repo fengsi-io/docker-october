@@ -56,6 +56,7 @@ return [
             'endpoint'   => env('FILESYSTEM_S3_ENDPOINT', 'your-endpoint'),
             'region'     => env('FILESYSTEM_S3_REGION', 'your-region'),
             'bucket'     => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
+            'url'        => env('FILESYSTEM_S3_ROOT_ENDPOINT', '/storage/app/'),
             'visibility' => 'public',
         ],
 

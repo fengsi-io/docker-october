@@ -1,8 +1,12 @@
+OCTOBER_VERSION ?= v1.1.1
 IMAGE			?= october
 REGISTRY		?= fengsiio
-OCTOBER_VERSION ?=v1.1.1
+TAG				?= $(REGISTRY)/$(IMAGE):$(patsubst v%,%,$(OCTOBER_VERSION))
 
 all: build push
+
+test:
+	@echo 
 
 .ONESHELL:
 build:
@@ -13,7 +17,7 @@ build:
 		--build-arg https_proxy \
 		--build-arg no_proxy \
 		--build-arg OCTOBER_VERSION=$(OCTOBER_VERSION) \
-		-t $(REGISTRY)/$(IMAGE):$(OCTOBER_VERSION) .
+		-t $(TAG) .
 
 push:
-	@docker push $(REGISTRY)/$(IMAGE):$(OCTOBER_VERSION)
+	@docker push $(TAG)

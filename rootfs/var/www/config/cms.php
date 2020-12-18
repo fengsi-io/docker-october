@@ -315,21 +315,21 @@ return [
 
         'uploads' => [
             'disk'            => env('FILESYSTEM_DEFAULT', 'local'),
-            'folder'          => env('FILESYSTEM_ROOT', '') . 'uploads',
-            'path'            => env('FILESYSTEM_ROOT_URL', '/storage/app/') . 'uploads',
+            'folder'          => env('FILESYSTEM_FOLDER', '') . 'uploads',
+            'path'            => env('FILESYSTEM_PATH', '/storage/app') . '/uploads',
             'temporaryUrlTTL' => 3600,
         ],
 
         'media' => [
             'disk'   => env('FILESYSTEM_DEFAULT', 'local'),
-            'folder' => env('FILESYSTEM_ROOT', '') . 'media',
-            'path'   => env('FILESYSTEM_ROOT_URL', '/storage/app/') . 'media',
+            'folder' => env('FILESYSTEM_FOLDER', '') . 'media',
+            'path'   => env('FILESYSTEM_PATH', '/storage/app') . '/media',
         ],
 
         'resized' => [
             'disk'   => env('FILESYSTEM_DEFAULT', 'local'),
-            'folder' => env('FILESYSTEM_ROOT', '') . 'resized',
-            'path'   => env('FILESYSTEM_ROOT_URL', '/storage/app/') . 'resized',
+            'folder' => env('FILESYSTEM_FOLDER', '') . 'resized',
+            'path'   => env('FILESYSTEM_PATH', '/storage/app') . '/resized',
         ],
 
     ],
