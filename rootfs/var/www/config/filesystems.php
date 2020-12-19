@@ -56,7 +56,17 @@ return [
             'endpoint'   => env('FILESYSTEM_S3_ENDPOINT', 'your-endpoint'),
             'region'     => env('FILESYSTEM_S3_REGION', 'your-region'),
             'bucket'     => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
-            'url'        => env('FILESYSTEM_S3_ROOT_ENDPOINT', '/storage/app/'),
+            'visibility' => 'public',
+        ],
+
+        's3-resized' => [
+            'driver'     => 's3',
+            'key'        => env('FILESYSTEM_S3_KEY', 'your-key'),
+            'secret'     => env('FILESYSTEM_S3_SECRET', 'your-secret'),
+            'endpoint'   => env('FILESYSTEM_S3_ENDPOINT', 'your-endpoint'),
+            'region'     => env('FILESYSTEM_S3_REGION', 'your-region'),
+            'bucket'     => env('FILESYSTEM_S3_BUCKET', 'your-bucket'),
+            'url'        => env('FILESYSTEM_S3_URL', 'your-bucket'),
             'visibility' => 'public',
         ],
 

@@ -327,7 +327,7 @@ return [
         ],
 
         'resized' => [
-            'disk'   => env('FILESYSTEM_DEFAULT', 'local'),
+            'disk'   => getenv('FILESYSTEM_DEFAULT', true) ? getenv('FILESYSTEM_DEFAULT') . '-resized' : 'local',
             'folder' => env('FILESYSTEM_FOLDER', '') . 'resized',
             'path'   => env('FILESYSTEM_PATH', '/storage/app') . '/resized',
         ],
