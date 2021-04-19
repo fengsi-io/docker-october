@@ -39,16 +39,60 @@ fi
 #
 # plugin install
 #
+plugin_root_path="/var/www/plugins"
+preset_plugins_path="/docker-entrypoint.d/plugins"
 new_plugin_installed=false
 
+# install preset plugins
+current_dir=$(pwd)
+for d in "$preset_plugins_path"/*/*/; do
+    plugin_dir=$(echo "$d" | cut -d/ -f4-5)
+
+    if [ "$plugin_dir" = "*/*" ]; then
+        continue
+    fi
+
+    plugin_name=$(echo "${plugin_dir}" | awk -F '/' '{printf("%s.%s", toupper(substr($1,0,1))substr($1,2,length($1)), toupper(substr($2,0,1))substr($2,2,length($2)))}')
+
+    echo "install preset plugin: \"$plugin_name\""
+
+    plugin_src_path="$preset_plugins_path/$plugin_dir"
+    plugin_dest_path="$plugin_root_path/$plugin_dir"
+
+    # Install dependencies if necessary
+    if [ -f "$plugin_src_path/composer.json" ]; then
+        printf "\tinstall dependencies."
+        cd "$plugin_src_path" && composer up && cd "$current_dir"
+    fi
+
+    # remove files if path is exist.
+    if [ ! -d "$plugin_dest_path" ]; then
+        rm -rf "$plugin_dest_path"
+    fi
+
+    # create path plugin parent path
+    if [ ! -d "$plugin_dest_path" ]; then
+        mkdir --parents "$plugin_dest_path"
+    fi
+
+    # Install plugin
+    cp -r "$plugin_src_path"/* "$plugin_dest_path"
+    rm -rf "$plugin_src_path"
+
+    new_plugin_installed=true
+done
+
+# download plugins
 for plugin in $(echo "$PLUGINS" | tr "," " "); do
+    plugin_path=$(echo "$plugin" | tr '[:upper:]' '[:lower:]' | tr '.' '/')
+    plugin_full_path="/var/www/plugins/$plugin_path"
 
-    plugin_path="/var/www/plugins/$(echo "$plugin" | tr '[:upper:]' '[:lower:]' | tr '.' '/')"
-
-    if [ ! -d "$plugin_path" ]; then
+    set +e
+    if [ ! -d "$plugin_full_path" ]; then
         php artisan plugin:install "${plugin}"
         new_plugin_installed=true
     fi
+    set -e
 done
 
 if $new_plugin_installed; then

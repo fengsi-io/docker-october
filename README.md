@@ -20,6 +20,11 @@ docker run \
     fengsiio/october:latest
 ```
 
+### custom plugins
+
+place your custom plugins to `/docker-entrypoint.d/plugins` will install on
+system boot.
+
 You can also use build in config with environments variable:
 
 ```shell

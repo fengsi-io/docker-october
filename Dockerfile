@@ -22,7 +22,7 @@ FROM composer:2 as october-builder
 
 WORKDIR /build
 
-ARG OCTOBER_VERSION="v1.1.1"
+ARG OCTOBER_VERSION="v1.1.5"
 
 RUN set -ex; \
     # force to use v1
@@ -74,7 +74,7 @@ WORKDIR /var/www
 
 RUN set -ex; \
     if [ -n "${http_proxy}" ]; then \
-        sed -i 's@dl-cdn.alpinelinux.org@mirrors.aliyun.com@g' /etc/apk/repositories; \
+        sed -i 's@https://.*.alpinelinux.org@http://mirrors.aliyun.com@g' /etc/apk/repositories; \
     fi; \
     #
     # PHP
@@ -116,7 +116,14 @@ RUN set -ex; \
     ln -s "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
     # for premission and entrypoint depends
     apk add --no-cache wait4ports patch fcgi; \
-    chown -R www-data:www-data /var/www;
+    chown -R www-data:www-data /var/www; \
+    # install composer
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; \
+    php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62c56153228907f1545c228516cbf63f885e036d37e9a59d27d63f46af1d4d07ee0f76181c7d3') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"; \
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.0.12; \
+    php -r "unlink('composer-setup.php');"; \
+    # for init
+    mkdir -p /docker-entrypoint.d/plugins;
 
 # Install Caddy & Process Wrapper
 COPY --from=caddy-builder /go/bin/parent /bin/parent
