@@ -19,6 +19,7 @@ build:
 		--build-arg all_proxy \
 		--build-arg OCTOBER_VERSION=$(OCTOBER_VERSION) \
 		-t $(TAG) .
+	@docker tag $(TAG) $(REGISTRY)/$(IMAGE):latest
 
 push:
 	@docker push $(TAG)

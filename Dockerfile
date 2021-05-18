@@ -25,26 +25,14 @@ WORKDIR /build
 ARG OCTOBER_VERSION="v1.1.5"
 
 RUN set -ex; \
-    # force to use v1
-    composer --quiet self-update --1; \
-    if [ -n "${http_proxy}" ]; then \
-        export HTTP_PROXY_REQUEST_FULLURI=0; \
-        export HTTPS_PROXY_REQUEST_FULLURI=0; \
-        composer config -g repo.packagist composer https://packagist.phpcomposer.com; \
-        git config --global http.proxy ${http_proxy}; \
-        git config --global https.proxy ${http_proxy}; \
-    fi; \
-    # for v1 speed boost
-    composer global require hirak/prestissimo; \
-    # install package
-    git config --global url."https://github.com/".insteadOf git@github.com:; \
-    git config --global url."https://".insteadOf "git://"; \
     composer create-project \
         --quiet \
         --no-dev \
         --no-scripts \
         --ignore-platform-reqs \
         october/october . "${OCTOBER_VERSION#v}"; \
+    # for filsystem cache
+    composer require --quiet --no-scripts --ignore-platform-reqs league/flysystem-cached-adapter; \
     # use .env mode and backup origin config files
     chmod +x artisan; \
     ./artisan package:discover; \

@@ -1,5 +1,15 @@
 <?php
 
+if (!isset($storage_path_prefix)) {
+    if (env('FILESYSTEM_S3_URL', false)) {
+        $s3_url = rtrim(env('FILESYSTEM_S3_URL'), '/');
+        $s3_root = rtrim(env('FILESYSTEM_S3_ROOT'), '/');
+        $storage_path_prefix = "${s3_url}/${s3_root}";
+    } else {
+        $storage_path_prefix = '/storage/app';
+    }
+}
+
 return [
 
     /*
@@ -315,21 +325,21 @@ return [
 
         'uploads' => [
             'disk'            => env('FILESYSTEM_DEFAULT', 'local'),
-            'folder'          => env('FILESYSTEM_FOLDER', '') . 'uploads',
-            'path'            => env('FILESYSTEM_PATH', '/storage/app') . '/uploads',
+            'folder'          => 'uploads',
+            'path'            => "${storage_path_prefix}/uploads",
             'temporaryUrlTTL' => 3600,
         ],
 
         'media' => [
             'disk'   => env('FILESYSTEM_DEFAULT', 'local'),
-            'folder' => env('FILESYSTEM_FOLDER', '') . 'media',
-            'path'   => env('FILESYSTEM_PATH', '/storage/app') . '/media',
+            'folder' => 'media',
+            'path'   => "${storage_path_prefix}/media",
         ],
 
         'resized' => [
-            'disk'   => getenv('FILESYSTEM_DEFAULT', true) ? getenv('FILESYSTEM_DEFAULT') . '-resized' : 'local',
-            'folder' => env('FILESYSTEM_FOLDER', '') . 'resized',
-            'path'   => env('FILESYSTEM_PATH', '/storage/app') . '/resized',
+            'disk'   => getenv('FILESYSTEM_DEFAULT', true) ? getenv('FILESYSTEM_DEFAULT') : 'local',
+            'folder' => 'resized',
+            'path'   => "${storage_path_prefix}/resized",
         ],
 
     ],

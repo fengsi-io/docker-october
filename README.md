@@ -44,4 +44,14 @@ DB_PASSWORD=opUcc+N3t3g8/oUm90I=
 # for initalize script
 THEME=YOUR_THEME_CODE
 PLUGINS=Ompmega.MixHelper, Martin.Forms, Mohsin.txt, ToughDeveloper.ImageResizer, VojtaSvoboda.TwigExtensions
+
+# for s3 disks
+FILESYSTEM_DEFAULT: "s3"
+FILESYSTEM_S3_ROOT: "your_root_path"
+FILESYSTEM_S3_ENDPOINT: "https://your-region.digitaloceanspaces.com"
+FILESYSTEM_S3_URL: "https://cdn.domain.example"
+FILESYSTEM_S3_KEY: "your-s3-key"
+FILESYSTEM_S3_SECRET: "your-s3-secret"
+FILESYSTEM_S3_REGION: "your-region"
+FILESYSTEM_S3_BUCKET: "your-bucket"
 ```

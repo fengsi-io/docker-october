@@ -82,21 +82,28 @@ for d in "$preset_plugins_path"/*/*/; do
     new_plugin_installed=true
 done
 
-# download plugins
 for plugin in $(echo "$PLUGINS" | tr "," " "); do
-    plugin_path=$(echo "$plugin" | tr '[:upper:]' '[:lower:]' | tr '.' '/')
-    plugin_full_path="/var/www/plugins/$plugin_path"
-
-    set +e
-    if [ ! -d "$plugin_full_path" ]; then
-        php artisan plugin:install "${plugin}"
+    if [ "${plugin#*/}" != "$plugin" ]; then 
+        # install package as a composer package
+        echo "install composer plugin: \"$plugin\""
+        composer require --quiet "$plugin"
         new_plugin_installed=true
+    else
+        # install plugins from OctoberCMS marketplace
+        echo "install marketplace plugin: \"$plugin\""
+        plugin_path=$(echo "$plugin" | tr '[:upper:]' '[:lower:]' | tr '.' '/')
+        plugin_full_path="/var/www/plugins/$plugin_path"
+        set +e
+        if [ ! -d "$plugin_full_path" ]; then
+            php artisan plugin:install -q "${plugin}"
+            new_plugin_installed=true
+        fi
+        set -e
     fi
-    set -e
 done
 
+# set plugin path permission when new plugin installed
 if $new_plugin_installed; then
-    # set plugin path permission when new plugin installed
     chown -R www-data:www-data /var/www/plugins || true
 fi
 
