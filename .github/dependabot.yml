@@ -12,6 +12,5 @@ updates:
     assignees:
       - everyx
     commit-message:
-      prefix: fix
-      prefix-development: chore
+      prefix: ci
       include: scope
