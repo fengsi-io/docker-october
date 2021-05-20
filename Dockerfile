@@ -120,6 +120,8 @@ COPY --from=october-builder --chown=www-data:www-data /build/ ./
 COPY ./rootfs/ /
 RUN chmod 755 /usr/local/bin/*.sh
 ENV PATH="/var/www:${PATH}"
+# ignore compose root warmming, ref: https://github.com/mattrayner/docker-lamp/issues/29
+ENV COMPOSER_ALLOW_SUPERUSER 1
 EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=10s --retries=3 CMD [ "php-fpm-healthcheck.sh" ]
 ENTRYPOINT [ "docker-entrypoint.sh" ]
