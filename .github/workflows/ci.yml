@@ -24,7 +24,7 @@ jobs:
       - name: Docker meta
         if: success()
         id: docker_meta
-        uses: docker/metadata-action@v3.4.0
+        uses: docker/metadata-action@v3.4.1
         with:
           images: fengsiio/october
           tags: |
