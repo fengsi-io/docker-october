@@ -15,48 +15,7 @@ RUN if [ -n "${http_proxy}" ]; then \
     /bin/sh /usr/bin/builder.sh
 
 
-#
-# October CMS Builder
-#
-FROM composer:2 as october-builder
-
-WORKDIR /build
-
-ARG OCTOBER_VERSION="v1.1.5"
-
-RUN set -ex; \
-    composer create-project \
-        --quiet \
-        --no-dev \
-        --no-scripts \
-        --ignore-platform-reqs \
-        october/october . "${OCTOBER_VERSION#v}"; \
-    # for filsystem cache
-    composer require --quiet --no-scripts --ignore-platform-reqs league/flysystem-cached-adapter; \
-    # use .env mode and backup origin config files
-    chmod +x artisan; \
-    ./artisan package:discover; \
-    ./artisan october:env; \
-    mv .env .env.origin && mv config config.origin; \
-    # remove some useless files
-    (\
-        find . -type d -name ".git" && \
-        find . -type d -name ".github" && \
-        find . -name ".gitattributes" && \
-        find . -name ".gitignore" && \
-        find . -name ".gitmodules" && \
-        find . -name ".editorconfig" && \
-        find . -name ".babelrc" && \
-        find . -name ".jshintrc" && \
-        find . -name "phpcs.xml" && \
-        find . -name "phpunit.xml" \
-    ) | xargs rm -rf;
-
-
-#
-# Final Stage
-#
-FROM php:7.4-fpm-alpine
+FROM php:7.4-fpm-alpine as october-base
 LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
 
@@ -105,13 +64,51 @@ RUN set -ex; \
     # for premission and entrypoint depends
     apk add --no-cache wait4ports patch fcgi; \
     chown -R www-data:www-data /var/www; \
-    # install composer
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"; \
-    php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62c56153228907f1545c228516cbf63f885e036d37e9a59d27d63f46af1d4d07ee0f76181c7d3') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"; \
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.0.12; \
-    php -r "unlink('composer-setup.php');"; \
     # for init
     mkdir -p /docker-entrypoint.d/plugins;
+
+# install composer
+COPY --from=composer:2.2.21 /usr/bin/composer /usr/bin/composer
+
+#
+# October CMS Builder
+#
+FROM october-base as october-builder
+
+WORKDIR /build
+
+ARG OCTOBER_VERSION="v1.1.12"
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN set -ex; \
+    composer config --global --no-plugins allow-plugins.composer/installers true; \
+    composer create-project --quiet --no-dev october/october . "${OCTOBER_VERSION/v/}"; \
+    # for filsystem cache
+    composer require --quiet league/flysystem-cached-adapter:1.1.*; \
+    # use .env mode and backup origin config files
+    chmod +x artisan; \
+    ./artisan package:discover; \
+    ./artisan october:env; \
+    mv .env .env.origin && mv config config.origin; \
+    cp -r storage storage.origin; \
+    # remove some useless files
+    (\
+        find . -type d -name ".git" && \
+        find . -type d -name ".github" && \
+        find . -name ".gitattributes" && \
+        find . -name ".gitignore" && \
+        find . -name ".gitmodules" && \
+        find . -name ".editorconfig" && \
+        find . -name ".babelrc" && \
+        find . -name ".jshintrc" && \
+        find . -name "phpcs.xml" && \
+        find . -name "phpunit.xml" \
+    ) | xargs rm -rf;
+
+
+#
+# Final Stage
+#
+FROM october-base
 
 # Install Caddy & Process Wrapper
 COPY --from=caddy-builder /go/bin/parent /bin/parent

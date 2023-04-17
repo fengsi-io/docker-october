@@ -10,6 +10,7 @@ fi
 # when debug, we should wait for db ready.
 #
 if [ "${APP_DEBUG:=false}" = "true" ]; then
+    set -x;
     # wait for db started
     wait4ports -q -s 1 -t 60 database=tcp://"${DB_HOST}":"${DB_PORT}"
 fi
@@ -18,6 +19,8 @@ fi
 # octobercms initializing
 #
 if [ ! -f .INITIALIZED ] && [ -n "${DB_HOST}" ] && [ -n "${DB_PORT}" ]; then
+    # create storage directory
+    cp -r storage.origin/* storage
 
     # database migration and new app key
     php artisan october:up
