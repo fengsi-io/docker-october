@@ -66,10 +66,10 @@ fi
 
 # render cloudflare IPs from env var if set
 if [ -n "${CLOUDFLARE_REAL_IP_FROM}" ]; then
-    echo "${CLOUDFLARE_REAL_IP_FROM}" | tr ',' '\n' > /etc/nginx/cloudflare-ips.conf
+    echo "${CLOUDFLARE_REAL_IP_FROM}" | tr ',' '\n' | sed 's/^/set_real_ip_from /; s/$/;/' > /etc/nginx/cloudflare-ips.conf
 else
-    # ensure file exists for nginx include
-    : > /etc/nginx/cloudflare-ips.conf
+    # nginx include requires at least a comment to be valid syntax
+    echo "# cloudflare-ips.conf (empty)" > /etc/nginx/cloudflare-ips.conf
 fi
 
 # Start PHP-FPM in background
