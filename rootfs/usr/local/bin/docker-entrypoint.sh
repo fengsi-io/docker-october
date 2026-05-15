@@ -60,4 +60,23 @@ if [ "$plugins_count_before" != "$plugins_count_after" ]; then
     php artisan october:up
 fi
 
-exec docker-php-entrypoint parent caddy -conf /etc/Caddyfile -log stdout -agree
+#
+# Nginx
+#
+
+# render cloudflare IPs from env var if set
+if [ -n "${CLOUDFLARE_REAL_IP_FROM}" ]; then
+    echo "${CLOUDFLARE_REAL_IP_FROM}" | tr ',' '\n' > /etc/nginx/cloudflare-ips.conf
+else
+    # ensure file exists for nginx include
+    : > /etc/nginx/cloudflare-ips.conf
+fi
+
+# Start PHP-FPM in background
+php-fpm -D
+
+# Graceful shutdown: forward signals to both processes
+trap 'nginx -s quit 2>/dev/null || true; kill -QUIT $(pgrep php-fpm 2>/dev/null || true) 2>/dev/null; wait' TERM QUIT INT
+
+nginx -g 'daemon off;' &
+wait $!

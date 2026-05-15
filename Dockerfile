@@ -1,20 +1,3 @@
-#
-# caddy builder
-#
-FROM fengsiio/caddy-builder:v1 as caddy-builder
-
-ARG CADDY_VERSION="1.0.5"
-ARG CADDY_PLUGINS="\
-    github.com/epicagency/caddy-expires \
-    github.com/captncraig/caddy-realip \
-    "
-
-RUN if [ -n "${http_proxy}" ]; then \
-        go env -w GO111MODULE=on && go env -w GOPROXY=https://goproxy.io,direct; \
-    fi && \
-    /bin/sh /usr/bin/builder.sh
-
-
 FROM php:7.4-fpm-alpine as october-base
 LABEL maintainer "Gavin Luo <gavin.luo@fengsi.io>"
 WORKDIR /var/www
@@ -110,9 +93,8 @@ RUN set -ex; \
 #
 FROM october-base
 
-# Install Caddy & Process Wrapper
-COPY --from=caddy-builder /go/bin/parent /bin/parent
-COPY --from=caddy-builder /go/bin/caddy /usr/bin/caddy
+# Install Nginx
+RUN apk add --no-cache nginx
 COPY --from=october-builder --chown=www-data:www-data /build/ ./
 COPY ./rootfs/ /
 RUN chmod 755 /usr/local/bin/*.sh
