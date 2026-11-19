@@ -192,12 +192,64 @@ RUN set -ex; \
 
 
 #
+# Nginx
+#
+# Alpine 3.16（php:7.4 base 所用的发行版）只提供 nginx 1.22.1，且该分支已 EOL、不再接收
+# 安全更新；1.22.1 落在多个 CVE 的受影响区间内（如 CVE-2026-125283 try_files+alias、
+# CVE-2026-42533 map+regex、CVE-2026-42945 rewrite）。php 7.4 把 Alpine 版本钉死了，
+# 无法靠升级基础镜像拿到新版 nginx，因此从源码编译 1.31.9。
+# configure 参数刻意对齐 Alpine 的 nginx 包布局（/etc/nginx、/usr/sbin/nginx、
+# /var/lib/nginx、/run/nginx），这样 rootfs 里的 http.d/default.conf 与 entrypoint 的
+# nginx -g / nginx -s quit 都不需要改。
+FROM october-base AS nginx-builder
+ARG NGINX_VERSION=1.31.9
+ARG NGINX_SHA256=a11c5eeee2e257f4478f0e649f84b0040787d277d2d3e5233952aa6b6dcb80ad
+RUN set -ex; \
+    apk add --no-cache --virtual .nginx-build-deps \
+        gcc musl-dev make pcre2-dev zlib-dev openssl-dev linux-headers curl tar; \
+    curl -fsSL -o /tmp/nginx.tar.gz "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
+    echo "${NGINX_SHA256}  /tmp/nginx.tar.gz" | sha256sum -c -; \
+    mkdir -p /tmp/nginx-src; \
+    tar -xf /tmp/nginx.tar.gz -C /tmp/nginx-src --strip-components=1; \
+    cd /tmp/nginx-src; \
+    ./configure \
+        --prefix=/var/lib/nginx \
+        --sbin-path=/usr/sbin/nginx \
+        --conf-path=/etc/nginx/nginx.conf \
+        --pid-path=/run/nginx/nginx.pid \
+        --lock-path=/run/nginx/nginx.lock \
+        --error-log-path=/var/log/nginx/error.log \
+        --http-log-path=/var/log/nginx/access.log \
+        --http-client-body-temp-path=/var/lib/nginx/tmp/client_body \
+        --http-proxy-temp-path=/var/lib/nginx/tmp/proxy \
+        --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi \
+        --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi \
+        --http-scgi-temp-path=/var/lib/nginx/tmp/scgi \
+        --with-http_ssl_module \
+        --with-http_v2_module \
+        --with-http_realip_module \
+        --with-http_gzip_static_module \
+        --with-http_stub_status_module \
+        --with-http_auth_request_module \
+        --with-threads \
+        --with-pcre-jit \
+        --with-cc-opt="-O2"; \
+    make -j"$(nproc)"; \
+    make install; \
+    rm -rf /tmp/nginx-src /tmp/nginx.tar.gz; \
+    apk del .nginx-build-deps
+
+#
 # Final Stage
 #
 FROM october-base
 
 # Install Nginx
-RUN apk add --no-cache nginx
+# 包负责目录布局（/etc/nginx/nginx.conf、http.d/、/var/lib/nginx）与 libssl/zlib；
+# 二进制就地替换成上面编译的 1.31.9。pcre2 必须显式安装：Alpine 的 nginx 包依赖的是
+# PCRE1(pcre)，而 1.31 默认链接 libpcre2-8，漏了会在启动时报找不到共享库。
+RUN apk add --no-cache nginx pcre2
+COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=october-builder --chown=www-data:www-data /build/ ./
 COPY ./rootfs/ /
 RUN chmod 755 /usr/local/bin/*.sh
